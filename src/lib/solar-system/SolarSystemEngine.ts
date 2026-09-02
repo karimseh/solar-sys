@@ -10,7 +10,6 @@ import type { OrbitalElementsAtDate } from "../astronomy/types"
 import {
   bodyRadiusToSceneUnits,
   setScenePositionFromEcliptic,
-  type ScaleMode,
 } from "@/lib/solar-system/scene-scale"
 
 export type SolarSystemEngineOptions = {
@@ -31,7 +30,6 @@ type BodyRuntime = {
 export class SolarSystemEngine {
   private readonly container: HTMLElement
   private simulationJulianDate = dateToJulianDateUtc(new Date())
-  private scaleMode: ScaleMode = "exploration"
   private readonly scene: THREE.Scene
   private readonly camera: THREE.PerspectiveCamera
   private readonly renderer: THREE.WebGLRenderer
@@ -117,24 +115,6 @@ export class SolarSystemEngine {
     this.resize()
 
     this.renderer.setAnimationLoop(this.animate)
-  }
-  public setScaleMode(mode: ScaleMode): void {
-    if (this.scaleMode === mode) {
-      return
-    }
-
-    this.scaleMode = mode
-
-    for (const body of this.bodies) {
-      const displayRadius = bodyRadiusToSceneUnits(
-        body.definition.radiusKm,
-        body.definition.kind,
-        mode,
-      )
-
-      body.displayRadius = displayRadius
-      body.mesh.scale.setScalar(displayRadius)
-    }
   }
 
   public setPaused(paused: boolean): void {
@@ -306,7 +286,6 @@ export class SolarSystemEngine {
     const displayRadius = bodyRadiusToSceneUnits(
       definition.radiusKm,
       definition.kind,
-      this.scaleMode,
     )
 
     mesh.scale.setScalar(displayRadius)

@@ -11,8 +11,6 @@ const SUN_MEAN_RADIUS_KM = 695_700
 const EXPLORATION_EARTH_RADIUS = 0.12
 const EXPLORATION_SUN_RADIUS = 0.6
 
-export type ScaleMode = "true" | "exploration"
-
 export function kilometersToSceneUnits(kilometers: number): number {
   if (!Number.isFinite(kilometers) || kilometers < 0) {
     throw new RangeError("Kilometer distance must be finite and non-negative")
@@ -24,14 +22,9 @@ export function kilometersToSceneUnits(kilometers: number): number {
 export function bodyRadiusToSceneUnits(
   radiusKm: number,
   kind: CelestialBodyKind,
-  mode: ScaleMode,
 ): number {
   if (!Number.isFinite(radiusKm) || radiusKm <= 0) {
     throw new RangeError("Body radius must be finite and positive")
-  }
-
-  if (mode === "true") {
-    return kilometersToSceneUnits(radiusKm)
   }
 
   if (kind === "star") {
