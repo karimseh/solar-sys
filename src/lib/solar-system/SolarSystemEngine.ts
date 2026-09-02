@@ -11,6 +11,7 @@ import {
   bodyRadiusToSceneUnits,
   setScenePositionFromEcliptic,
 } from "@/lib/solar-system/scene-scale"
+import { createStarField } from "./visuals/create-star-field"
 
 export type SolarSystemEngineOptions = {
   onProgress?: (progress: number, url: string) => void
@@ -30,6 +31,10 @@ type BodyRuntime = {
 export class SolarSystemEngine {
   private readonly container: HTMLElement
   private simulationJulianDate = dateToJulianDateUtc(new Date())
+  private readonly starField: THREE.Points<
+    THREE.BufferGeometry,
+    THREE.ShaderMaterial
+  >
   private readonly scene: THREE.Scene
   private readonly camera: THREE.PerspectiveCamera
   private readonly renderer: THREE.WebGLRenderer
@@ -67,6 +72,8 @@ export class SolarSystemEngine {
     this.onSelect = options.onSelect
     this.scene = new THREE.Scene()
     this.scene.background = new THREE.Color(0x02030a)
+    this.starField = createStarField()
+    this.scene.add(this.starField)
 
     this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000)
     this.camera.position.copy(this.overviewCameraPosition)
@@ -409,6 +416,8 @@ export class SolarSystemEngine {
     this.renderer.setAnimationLoop(null)
     this.resizeObserver.disconnect()
     this.controls.dispose()
+    this.starField.geometry.dispose()
+    this.starField.material.dispose()
     for (const body of this.bodies) {
       body.mesh.geometry.dispose()
       const materials = Array.isArray(body.mesh.material)
