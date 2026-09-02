@@ -8,6 +8,7 @@ import { resolveOrbitalElementsAtDate } from "../astronomy/orbital-elements"
 import { dateToJulianDateUtc } from "../astronomy/time"
 import type { OrbitalElementsAtDate } from "../astronomy/types"
 import { createEarthMaterial } from "./visuals/create-earth-material"
+import { createSunMaterial } from "./visuals/create-sun-material"
 import {
   bodyRadiusToSceneUnits,
   setScenePositionFromEcliptic,
@@ -36,6 +37,8 @@ export class SolarSystemEngine {
     THREE.BufferGeometry,
     THREE.ShaderMaterial
   >
+  private sunMaterial: THREE.ShaderMaterial | null = null
+  private visualTime = 0
   private readonly scene: THREE.Scene
   private readonly camera: THREE.PerspectiveCamera
   private readonly renderer: THREE.WebGLRenderer
@@ -280,13 +283,16 @@ export class SolarSystemEngine {
       : null
 
     let material: THREE.Material
+    if (definition.kind === "star" && colorMap) {
+      const sunMaterial = createSunMaterial(colorMap)
 
-    if (colorMap && nightMap) {
+      this.sunMaterial = sunMaterial
+      material = sunMaterial
+    } else if (colorMap && nightMap) {
       material = createEarthMaterial(colorMap, nightMap)
     } else if (definition.kind === "star") {
       material = new THREE.MeshBasicMaterial({
         color: definition.visual.color,
-        map: colorMap,
       })
     } else {
       material = new THREE.MeshStandardMaterial({
@@ -391,6 +397,10 @@ export class SolarSystemEngine {
       this.previousFrameTime === 0
         ? 0
         : Math.min((time - this.previousFrameTime) * 0.001, 0.1)
+    this.visualTime += deltaTime
+    if (this.sunMaterial) {
+      this.sunMaterial.uniforms.uTime.value = this.visualTime
+    }
 
     this.previousFrameTime = time
     if (!this.isPaused) {
