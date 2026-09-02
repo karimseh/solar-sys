@@ -1,4 +1,5 @@
 import type { CelestialBodyDefinition } from "@/types/celestial-body"
+import { EARTH_MOON_BARYCENTER_ELEMENTS } from "../astronomy/data/jpl-planetary-elements"
 
 export const CELESTIAL_BODIES = [
   {
@@ -7,6 +8,7 @@ export const CELESTIAL_BODIES = [
     kind: "star",
     parentId: null,
     radiusKm: 695_700,
+    orbitalElements: null,
     meanDistanceFromParentKm: 0,
     orbitalPeriodDays: null,
     rotationPeriodHours: 600,
@@ -15,10 +17,8 @@ export const CELESTIAL_BODIES = [
       "The Sun is the star at the center of our solar system. It is a nearly perfect sphere of hot plasma, heated to incandescence by nuclear fusion reactions in its core.",
     visual: {
       radius: 1,
-      orbitRadius: 0,
       color: "#ffb300",
       spinSpeed: 0.12,
-      orbitSpeed: 0,
       texturePath: null,
     },
   },
@@ -29,6 +29,7 @@ export const CELESTIAL_BODIES = [
     parentId: "sun",
 
     radiusKm: 6_371,
+    orbitalElements: EARTH_MOON_BARYCENTER_ELEMENTS,
     meanDistanceFromParentKm: 149_700_000,
     orbitalPeriodDays: 365.25,
     rotationPeriodHours: 23.9,
@@ -39,10 +40,10 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       radius: 0.28,
-      orbitRadius: 4,
+
       color: "#2878ff",
       spinSpeed: 0.8,
-      orbitSpeed: 0.18,
+
       texturePath: "/textures/earth-day.jpg",
     },
   },

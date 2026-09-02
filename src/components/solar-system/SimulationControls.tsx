@@ -117,7 +117,7 @@ export function SimulationControls({
 
       <div
         className="flex h-10 items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 text-white/75"
-        title={`Simulation speed: ${speed}×`}
+        title={`${speed} simulated days per second`}
       >
         <SpeedIcon className="size-5 shrink-0" />
 
@@ -127,7 +127,7 @@ export function SimulationControls({
           max="4"
           step="0.25"
           value={speed}
-          aria-label="Simulation speed"
+          aria-label="Simulation speed in days per second"
           onChange={(event) => {
             onSpeedChange(Number(event.currentTarget.value))
           }}

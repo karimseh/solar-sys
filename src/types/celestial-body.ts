@@ -1,3 +1,4 @@
+import type { OrbitalElements } from "@/lib/astronomy/types"
 export type CelestialBodyKind = "star" | "planet" | "moon"
 
 export interface CelestialBodyDefinition {
@@ -5,6 +6,7 @@ export interface CelestialBodyDefinition {
   readonly name: string
   readonly kind: CelestialBodyKind
   readonly parentId: string | null
+  readonly orbitalElements: OrbitalElements | null
 
   readonly radiusKm: number
   readonly meanDistanceFromParentKm: number
@@ -15,10 +17,8 @@ export interface CelestialBodyDefinition {
 
   readonly visual: {
     readonly radius: number
-    readonly orbitRadius: number
     readonly color: string
     readonly spinSpeed: number
-    readonly orbitSpeed: number
     readonly texturePath: string | null
   }
 }

@@ -2,6 +2,12 @@ import * as THREE from "three"
 import { OrbitControls } from "three/addons/controls/OrbitControls.js"
 import { CELESTIAL_BODIES } from "@/lib/solar-system/bodies"
 import type { CelestialBodyDefinition } from "@/types/celestial-body"
+import { calculateHeliocentricEclipticPosition } from "../astronomy/ecliptic-coordinates"
+import { sampleEclipticOrbit } from "../astronomy/orbit-path"
+import { resolveOrbitalElementsAtDate } from "../astronomy/orbital-elements"
+import { dateToJulianDateUtc } from "../astronomy/time"
+import type { OrbitalElementsAtDate } from "../astronomy/types"
+import { setScenePositionFromEcliptic } from "./scene-scale"
 
 export type SolarSystemEngineOptions = {
   onProgress?: (progress: number, url: string) => void
@@ -13,13 +19,12 @@ export type SolarSystemEngineOptions = {
 type BodyRuntime = {
   definition: CelestialBodyDefinition
   mesh: THREE.Mesh
-  orbitPivot: THREE.Object3D
   positionGroup: THREE.Object3D
-  tiltGroup: THREE.Object3D
   orbitPath: THREE.LineLoop | null
 }
 export class SolarSystemEngine {
   private readonly container: HTMLElement
+  private simulationJulianDate = dateToJulianDateUtc(new Date())
   private readonly scene: THREE.Scene
   private readonly camera: THREE.PerspectiveCamera
   private readonly renderer: THREE.WebGLRenderer
@@ -39,7 +44,7 @@ export class SolarSystemEngine {
   private readonly cameraOffset = new THREE.Vector3()
 
   private simulationTime = 0
-  private simulationSpeed = 1
+  private simulationDaysPerSecond = 1
   private isPaused = false
   private orbitPathsVisible = true
 
@@ -111,8 +116,8 @@ export class SolarSystemEngine {
     this.isPaused = paused
   }
 
-  public setSimulationSpeed(speed: number): void {
-    this.simulationSpeed = THREE.MathUtils.clamp(speed, 0.25, 4)
+  public setSimulationSpeed(daysPerSecond: number): void {
+    this.simulationDaysPerSecond = THREE.MathUtils.clamp(daysPerSecond, 0.25, 4)
   }
 
   public setOrbitPathsVisible(visible: boolean): void {
@@ -277,19 +282,27 @@ export class SolarSystemEngine {
     const tiltGroup = new THREE.Object3D()
     tiltGroup.rotation.x = THREE.MathUtils.degToRad(definition.axialTiltDegrees)
     tiltGroup.add(mesh)
-
     const positionGroup = new THREE.Object3D()
-    positionGroup.position.x = definition.visual.orbitRadius
     positionGroup.add(tiltGroup)
+    this.scene.add(positionGroup)
+    if (definition.orbitalElements) {
+      const initialPosition = calculateHeliocentricEclipticPosition(
+        definition.orbitalElements,
+        this.simulationJulianDate,
+      )
 
-    const orbitPivot = new THREE.Object3D()
-    orbitPivot.add(positionGroup)
-
-    this.scene.add(orbitPivot)
+      setScenePositionFromEcliptic(positionGroup.position, initialPosition)
+    }
 
     let orbitPath: THREE.LineLoop | null = null
-    if (definition.visual.orbitRadius > 0) {
-      orbitPath = this.createOrbitPath(definition.visual.orbitRadius)
+    if (definition.orbitalElements) {
+      const elementsAtDate = resolveOrbitalElementsAtDate(
+        definition.orbitalElements,
+        this.simulationJulianDate,
+      )
+
+      orbitPath = this.createOrbitPath(elementsAtDate)
+      orbitPath.visible = this.orbitPathsVisible
       this.scene.add(orbitPath)
     }
     if (definition.kind === "star") {
@@ -300,34 +313,31 @@ export class SolarSystemEngine {
     this.bodies.push({
       definition,
       mesh,
-      orbitPivot,
       positionGroup,
-      tiltGroup,
       orbitPath,
     })
   }
-  private createOrbitPath = (radius: number): THREE.LineLoop => {
-    const points: THREE.Vector3[] = []
-    const segments = 128
-    for (let i = 0; i < segments; i += 1) {
-      const angle = (i / segments) * Math.PI * 2
-      points.push(
-        new THREE.Vector3(
-          Math.cos(angle) * radius,
-          0,
-          Math.sin(angle) * radius,
-        ),
-      )
-    }
+  private createOrbitPath = (
+    elements: OrbitalElementsAtDate,
+  ): THREE.LineLoop => {
+    const points = sampleEclipticOrbit(elements).map((position) => {
+      const point = new THREE.Vector3()
+
+      setScenePositionFromEcliptic(point, position)
+
+      return point
+    })
+
     const geometry = new THREE.BufferGeometry().setFromPoints(points)
+
     const material = new THREE.LineBasicMaterial({
       color: 0x888888,
       transparent: true,
       opacity: 0.5,
     })
+
     return new THREE.LineLoop(geometry, material)
   }
-
   private resize = (): void => {
     const width = this.container.clientWidth
     const height = this.container.clientHeight
@@ -348,14 +358,25 @@ export class SolarSystemEngine {
 
     this.previousFrameTime = time
     if (!this.isPaused) {
-      this.simulationTime += deltaTime * this.simulationSpeed
+      const simulatedDays = deltaTime * this.simulationDaysPerSecond
+
+      this.simulationJulianDate += simulatedDays
+      this.simulationTime += simulatedDays
     }
 
     for (const body of this.bodies) {
       body.mesh.rotation.y =
         this.simulationTime * body.definition.visual.spinSpeed
-      body.orbitPivot.rotation.y =
-        this.simulationTime * body.definition.visual.orbitSpeed
+      const orbitalElements = body.definition.orbitalElements
+
+      if (orbitalElements) {
+        const position = calculateHeliocentricEclipticPosition(
+          orbitalElements,
+          this.simulationJulianDate,
+        )
+
+        setScenePositionFromEcliptic(body.positionGroup.position, position)
+      }
     }
     this.updateCamera(deltaTime)
 
