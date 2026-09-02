@@ -1,3 +1,11 @@
+const SPEED_PRESETS = [
+  { multiplier: 1, label: "Real time" },
+  { multiplier: 3_600, label: "1 hour per second" },
+  { multiplier: 86_400, label: "1 day per second" },
+  { multiplier: 604_800, label: "1 week per second" },
+  { multiplier: 2_592_000, label: "30 days per second" },
+] as const
+
 type SimulationControlsProps = {
   isPaused: boolean
   speed: number
@@ -88,6 +96,11 @@ export function SimulationControls({
     "grid size-10 place-items-center rounded-lg border border-white/15 " +
     "bg-white/10 text-white/75 transition " +
     "hover:bg-white/20 hover:text-white"
+  const selectedSpeedPreset =
+    SPEED_PRESETS.find((preset) => preset.multiplier === speed) ??
+    SPEED_PRESETS[0]
+
+  const selectedSpeedIndex = SPEED_PRESETS.indexOf(selectedSpeedPreset)
 
   return (
     <div className="absolute top-5 left-5 z-20 flex items-center gap-2 rounded-xl border border-white/15 bg-black/35 p-2 backdrop-blur-md">
@@ -117,19 +130,24 @@ export function SimulationControls({
 
       <div
         className="flex h-10 items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 text-white/75"
-        title={`${speed} simulated days per second`}
+        title={`Simulation speed: ${selectedSpeedPreset.label}`}
       >
         <SpeedIcon className="size-5 shrink-0" />
 
         <input
           type="range"
-          min="0.25"
-          max="4"
-          step="0.25"
-          value={speed}
-          aria-label="Simulation speed in days per second"
+          min={0}
+          max={SPEED_PRESETS.length - 1}
+          step={1}
+          value={selectedSpeedIndex}
+          aria-label="Simulation speed"
+          aria-valuetext={selectedSpeedPreset.label}
           onChange={(event) => {
-            onSpeedChange(Number(event.currentTarget.value))
+            const preset = SPEED_PRESETS[Number(event.currentTarget.value)]
+
+            if (preset) {
+              onSpeedChange(preset.multiplier)
+            }
           }}
           className="w-24 accent-white opacity-75"
         />

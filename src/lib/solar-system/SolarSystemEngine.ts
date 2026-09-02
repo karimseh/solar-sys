@@ -8,7 +8,7 @@ import type { CelestialBodyDefinition } from "@/types/celestial-body"
 import { calculateHeliocentricEclipticPosition } from "../astronomy/ecliptic-coordinates"
 import { sampleEclipticOrbit } from "../astronomy/orbit-path"
 import { resolveOrbitalElementsAtDate } from "../astronomy/orbital-elements"
-import { dateToJulianDateUtc } from "../astronomy/time"
+import { dateToJulianDateUtc, SECONDS_PER_DAY } from "../astronomy/time"
 import type { OrbitalElementsAtDate } from "../astronomy/types"
 import { createEarthMaterial } from "./visuals/create-earth-material"
 import { createSunMaterial } from "./visuals/create-sun-material"
@@ -24,6 +24,7 @@ const ORBIT_HOVER_COLOR = 0xffffff
 
 const ORBIT_DEFAULT_WIDTH = 0.8
 const ORBIT_HOVER_WIDTH = 2.5
+const MAX_SIMULATION_SPEED = 2_592_000
 
 export type SolarSystemEngineOptions = {
   onProgress?: (progress: number, url: string) => void
@@ -69,7 +70,7 @@ export class SolarSystemEngine {
   private readonly cameraOffset = new THREE.Vector3()
 
   private simulationTime = 0
-  private simulationDaysPerSecond = 1
+  private simulationSpeedMultiplier = 1
   private isPaused = false
   private orbitPathsVisible = true
 
@@ -166,8 +167,12 @@ export class SolarSystemEngine {
     this.isPaused = paused
   }
 
-  public setSimulationSpeed(daysPerSecond: number): void {
-    this.simulationDaysPerSecond = THREE.MathUtils.clamp(daysPerSecond, 0.25, 4)
+  public setSimulationSpeed(multiplier: number): void {
+    this.simulationSpeedMultiplier = THREE.MathUtils.clamp(
+      multiplier,
+      0.25,
+      MAX_SIMULATION_SPEED,
+    )
   }
 
   public setOrbitPathsVisible(visible: boolean): void {
@@ -379,8 +384,12 @@ export class SolarSystemEngine {
     selectionGroup.add(mesh)
 
     const tiltGroup = new THREE.Object3D()
+    const axialTiltRadians = THREE.MathUtils.degToRad(
+      definition.axialTiltDegrees,
+    )
 
-    tiltGroup.rotation.x = THREE.MathUtils.degToRad(definition.axialTiltDegrees)
+    tiltGroup.rotation.x =
+      definition.id === "earth" ? -axialTiltRadians : axialTiltRadians
 
     tiltGroup.add(selectionGroup)
 
@@ -553,7 +562,8 @@ export class SolarSystemEngine {
 
     this.previousFrameTime = time
     if (!this.isPaused) {
-      const simulatedDays = deltaTime * this.simulationDaysPerSecond
+      const simulatedDays =
+        (deltaTime * this.simulationSpeedMultiplier) / SECONDS_PER_DAY
 
       this.simulationJulianDate += simulatedDays
       this.simulationTime += simulatedDays
