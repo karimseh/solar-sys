@@ -68,6 +68,8 @@ export class SolarSystemEngine {
   private readonly focusedWorldPosition = new THREE.Vector3()
   private readonly desiredCameraPosition = new THREE.Vector3()
   private readonly cameraOffset = new THREE.Vector3()
+  private isFocusingSelectedBody = false
+  private readonly focusedBodyMovement = new THREE.Vector3()
 
   private simulationTime = 0
   private simulationSpeedMultiplier = 1
@@ -131,6 +133,7 @@ export class SolarSystemEngine {
     this.container.appendChild(this.renderer.domElement)
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement)
+    this.controls.enablePan = false
     this.controls.enableDamping = true
     this.controls.dampingFactor = 0.05
     this.controls.target.copy(this.overviewTarget)
@@ -267,10 +270,11 @@ export class SolarSystemEngine {
       const focusDistance = Math.max(body.displayRadius * 3.5, 0.6)
 
       this.cameraOffset.normalize().multiplyScalar(focusDistance)
-
+      this.isFocusingSelectedBody = true
       this.returningToOverview = false
       this.controls.enabled = false
     } else {
+      this.isFocusingSelectedBody = false
       this.returningToOverview = true
       this.controls.enabled = false
     }
@@ -286,13 +290,38 @@ export class SolarSystemEngine {
     if (this.selectedBody) {
       this.selectedBody.mesh.getWorldPosition(this.focusedWorldPosition)
 
-      this.desiredCameraPosition
+      if (this.isFocusingSelectedBody) {
+        this.desiredCameraPosition
+          .copy(this.focusedWorldPosition)
+          .add(this.cameraOffset)
+
+        this.camera.position.lerp(this.desiredCameraPosition, smoothing)
+        this.controls.target.lerp(this.focusedWorldPosition, smoothing)
+
+        const cameraHasArrived =
+          this.camera.position.distanceTo(this.desiredCameraPosition) < 0.01
+
+        const targetHasArrived =
+          this.controls.target.distanceTo(this.focusedWorldPosition) < 0.01
+
+        if (cameraHasArrived && targetHasArrived) {
+          this.camera.position.copy(this.desiredCameraPosition)
+          this.controls.target.copy(this.focusedWorldPosition)
+
+          this.isFocusingSelectedBody = false
+          this.controls.enabled = true
+        }
+
+        return
+      }
+
+      // Move the camera by the same amount as the orbiting planet.
+      this.focusedBodyMovement
         .copy(this.focusedWorldPosition)
-        .add(this.cameraOffset)
+        .sub(this.controls.target)
 
-      this.camera.position.lerp(this.desiredCameraPosition, smoothing)
-
-      this.controls.target.lerp(this.focusedWorldPosition, smoothing)
+      this.camera.position.add(this.focusedBodyMovement)
+      this.controls.target.copy(this.focusedWorldPosition)
 
       return
     }
