@@ -1,5 +1,8 @@
 import * as THREE from "three"
 import { OrbitControls } from "three/addons/controls/OrbitControls.js"
+import { Line2 } from "three/addons/lines/Line2.js"
+import { LineGeometry } from "three/addons/lines/LineGeometry.js"
+import { LineMaterial } from "three/addons/lines/LineMaterial.js"
 import { CELESTIAL_BODIES } from "@/lib/solar-system/bodies"
 import type { CelestialBodyDefinition } from "@/types/celestial-body"
 import { calculateHeliocentricEclipticPosition } from "../astronomy/ecliptic-coordinates"
@@ -16,6 +19,12 @@ import {
 import { createStarField } from "./visuals/create-star-field"
 import { calculateAxialRotationRadians } from "../astronomy/rotation"
 
+const ORBIT_DEFAULT_COLOR = 0x888888
+const ORBIT_HOVER_COLOR = 0xffffff
+
+const ORBIT_DEFAULT_WIDTH = 0.8
+const ORBIT_HOVER_WIDTH = 2.5
+
 export type SolarSystemEngineOptions = {
   onProgress?: (progress: number, url: string) => void
   onReady?: () => void
@@ -28,7 +37,7 @@ type BodyRuntime = {
   mesh: THREE.Mesh
   positionGroup: THREE.Object3D
   selectionGroup: THREE.Object3D
-  orbitPath: THREE.LineLoop | null
+  orbitPath: Line2 | null
   displayRadius: number
 }
 export class SolarSystemEngine {
@@ -40,6 +49,7 @@ export class SolarSystemEngine {
   >
   private sunMaterial: THREE.ShaderMaterial | null = null
   private visualTime = 0
+  private hoveredOrbitPath: Line2 | null = null
   private readonly scene: THREE.Scene
   private readonly camera: THREE.PerspectiveCamera
   private readonly renderer: THREE.WebGLRenderer
@@ -77,7 +87,7 @@ export class SolarSystemEngine {
     this.onSelect = options.onSelect
     this.scene = new THREE.Scene()
     this.scene.background = new THREE.Color(0x02030a)
-    const explorationFillLight = new THREE.AmbientLight(0x334466, 1)
+    const explorationFillLight = new THREE.AmbientLight(0xffffff, 0.35)
 
     explorationFillLight.name = "Exploration fill light"
 
@@ -91,6 +101,9 @@ export class SolarSystemEngine {
     this.renderer = new THREE.WebGLRenderer({ antialias: true })
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     this.renderer.outputColorSpace = THREE.SRGBColorSpace
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping
+
+    this.renderer.toneMappingExposure = 1
 
     this.renderer.domElement.style.display = "block"
     this.renderer.domElement.style.width = "100%"
@@ -101,6 +114,18 @@ export class SolarSystemEngine {
       this.handlePointerDown,
     )
     this.renderer.domElement.addEventListener("pointerup", this.handlePointerUp)
+    this.renderer.domElement.addEventListener(
+      "pointermove",
+      this.handlePointerMove,
+    )
+
+    this.renderer.domElement.addEventListener(
+      "pointerleave",
+      this.handlePointerLeave,
+    )
+    this.raycaster.params.Line2 = {
+      threshold: 10,
+    }
 
     this.container.appendChild(this.renderer.domElement)
 
@@ -175,7 +200,6 @@ export class SolarSystemEngine {
       -((event.clientY - rectangle.top) / rectangle.height) * 2 + 1
 
     this.raycaster.setFromCamera(this.pointer, this.camera)
-    this.updateOrbitPathPickThreshold(rectangle.height)
 
     // Meshes take priority when a planet overlaps its orbit.
     const meshIntersection = this.raycaster.intersectObjects(
@@ -372,7 +396,7 @@ export class SolarSystemEngine {
       setScenePositionFromEcliptic(positionGroup.position, initialPosition)
     }
 
-    let orbitPath: THREE.LineLoop | null = null
+    let orbitPath: Line2 | null = null
     if (definition.orbitalElements) {
       const elementsAtDate = resolveOrbitalElementsAtDate(
         definition.orbitalElements,
@@ -385,7 +409,7 @@ export class SolarSystemEngine {
       this.scene.add(orbitPath)
     }
     if (definition.kind === "star") {
-      const light = new THREE.PointLight(0xffffff, 150)
+      const light = new THREE.PointLight(0xffffff, 12)
       mesh.add(light)
     }
 
@@ -399,9 +423,7 @@ export class SolarSystemEngine {
     })
   }
 
-  private createOrbitPath = (
-    elements: OrbitalElementsAtDate,
-  ): THREE.LineLoop => {
+  private createOrbitPath = (elements: OrbitalElementsAtDate): Line2 => {
     const points = sampleEclipticOrbit(elements).map((position) => {
       const point = new THREE.Vector3()
 
@@ -410,30 +432,103 @@ export class SolarSystemEngine {
       return point
     })
 
-    const geometry = new THREE.BufferGeometry().setFromPoints(points)
+    // Line2 does not automatically close itself.
+    if (points.length > 0) {
+      points.push(points[0].clone())
+    }
 
-    const material = new THREE.LineBasicMaterial({
-      color: 0x888888,
+    const positions = points.flatMap((point) => [point.x, point.y, point.z])
+
+    const geometry = new LineGeometry()
+    geometry.setPositions(positions)
+
+    const material = new LineMaterial({
+      color: ORBIT_DEFAULT_COLOR,
+      linewidth: ORBIT_DEFAULT_WIDTH,
       transparent: true,
       opacity: 0.5,
+      depthWrite: false,
     })
 
-    return new THREE.LineLoop(geometry, material)
+    const orbitPath = new Line2(geometry, material)
+
+    orbitPath.computeLineDistances()
+
+    return orbitPath
   }
-  private updateOrbitPathPickThreshold(viewportHeight: number): void {
-    const cameraDistance = this.camera.position.distanceTo(this.controls.target)
-
-    const verticalFovRadians = THREE.MathUtils.degToRad(this.camera.fov)
-
-    const visibleWorldHeight =
-      2 * cameraDistance * Math.tan(verticalFovRadians / 2)
-
-    const worldUnitsPerPixel = visibleWorldHeight / viewportHeight
-
-    const pickRadiusPixels = 8
-
-    this.raycaster.params.Line.threshold = worldUnitsPerPixel * pickRadiusPixels
+  private getVisibleOrbitPaths(): Line2[] {
+    return this.bodies.flatMap((body) =>
+      body.orbitPath?.visible ? [body.orbitPath] : [],
+    )
   }
+
+  private updatePointerFromEvent(event: PointerEvent): boolean {
+    const rectangle = this.renderer.domElement.getBoundingClientRect()
+
+    if (rectangle.width === 0 || rectangle.height === 0) {
+      return false
+    }
+
+    this.pointer.x =
+      ((event.clientX - rectangle.left) / rectangle.width) * 2 - 1
+
+    this.pointer.y =
+      -((event.clientY - rectangle.top) / rectangle.height) * 2 + 1
+
+    return true
+  }
+
+  private setHoveredOrbitPath(orbitPath: Line2 | null): void {
+    if (this.hoveredOrbitPath === orbitPath) return
+
+    if (this.hoveredOrbitPath) {
+      this.hoveredOrbitPath.material.color.setHex(ORBIT_DEFAULT_COLOR)
+      this.hoveredOrbitPath.material.linewidth = ORBIT_DEFAULT_WIDTH
+      this.hoveredOrbitPath.material.opacity = 0.5
+    }
+
+    this.hoveredOrbitPath = orbitPath
+
+    if (orbitPath) {
+      orbitPath.material.color.setHex(ORBIT_HOVER_COLOR)
+      orbitPath.material.linewidth = ORBIT_HOVER_WIDTH
+      orbitPath.material.opacity = 0.95
+    }
+  }
+  private handlePointerMove = (event: PointerEvent): void => {
+    // Don’t highlight paths while dragging the camera.
+    if (event.buttons !== 0) {
+      this.setHoveredOrbitPath(null)
+      this.renderer.domElement.style.cursor = ""
+      return
+    }
+
+    if (!this.updatePointerFromEvent(event)) return
+
+    this.raycaster.setFromCamera(this.pointer, this.camera)
+
+    const meshIntersection = this.raycaster.intersectObjects(
+      this.bodies.map((body) => body.mesh),
+      false,
+    )[0]
+
+    const orbitIntersection = meshIntersection
+      ? undefined
+      : this.raycaster.intersectObjects(this.getVisibleOrbitPaths(), false)[0]
+
+    const orbitPath = (orbitIntersection?.object as Line2 | undefined) ?? null
+
+    this.setHoveredOrbitPath(orbitPath)
+
+    this.renderer.domElement.style.cursor =
+      meshIntersection || orbitPath ? "pointer" : ""
+  }
+
+  private handlePointerLeave = (): void => {
+    this.setHoveredOrbitPath(null)
+    this.renderer.domElement.style.cursor = ""
+  }
+
   private resize = (): void => {
     const width = this.container.clientWidth
     const height = this.container.clientHeight
@@ -527,6 +622,15 @@ export class SolarSystemEngine {
     this.renderer.domElement.removeEventListener(
       "pointerup",
       this.handlePointerUp,
+    )
+    this.renderer.domElement.removeEventListener(
+      "pointermove",
+      this.handlePointerMove,
+    )
+
+    this.renderer.domElement.removeEventListener(
+      "pointerleave",
+      this.handlePointerLeave,
     )
 
     this.scene.clear()
