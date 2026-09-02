@@ -18,7 +18,8 @@ export const CELESTIAL_BODIES = [
     visual: {
       color: "#ffb300",
       spinSpeed: 0.12,
-      texturePath: null,
+      texturePath: "/textures/sun-surface.jpg",
+      nightTexturePath: null,
     },
   },
   {
@@ -42,6 +43,7 @@ export const CELESTIAL_BODIES = [
       spinSpeed: 0.8,
 
       texturePath: "/textures/earth-day.jpg",
+      nightTexturePath: "/textures/earth-night.png",
     },
   },
 ] as const satisfies readonly CelestialBodyDefinition[]

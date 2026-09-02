@@ -7,6 +7,7 @@ import { sampleEclipticOrbit } from "../astronomy/orbit-path"
 import { resolveOrbitalElementsAtDate } from "../astronomy/orbital-elements"
 import { dateToJulianDateUtc } from "../astronomy/time"
 import type { OrbitalElementsAtDate } from "../astronomy/types"
+import { createEarthMaterial } from "./visuals/create-earth-material"
 import {
   bodyRadiusToSceneUnits,
   setScenePositionFromEcliptic,
@@ -274,18 +275,27 @@ export class SolarSystemEngine {
     const colorMap = definition.visual.texturePath
       ? this.loadColorTexture(definition.visual.texturePath)
       : null
-    const material: THREE.Material =
-      definition.kind === "star"
-        ? new THREE.MeshBasicMaterial({
-            color: definition.visual.color,
-            map: colorMap,
-          })
-        : new THREE.MeshStandardMaterial({
-            color: colorMap ? 0xffffff : definition.visual.color,
-            map: colorMap,
-            roughness: 0.8,
-            metalness: 0,
-          })
+    const nightMap = definition.visual.nightTexturePath
+      ? this.loadColorTexture(definition.visual.nightTexturePath)
+      : null
+
+    let material: THREE.Material
+
+    if (colorMap && nightMap) {
+      material = createEarthMaterial(colorMap, nightMap)
+    } else if (definition.kind === "star") {
+      material = new THREE.MeshBasicMaterial({
+        color: definition.visual.color,
+        map: colorMap,
+      })
+    } else {
+      material = new THREE.MeshStandardMaterial({
+        color: colorMap ? 0xffffff : definition.visual.color,
+        map: colorMap,
+        roughness: 0.8,
+        metalness: 0,
+      })
+    }
 
     const mesh = new THREE.Mesh(geometry, material)
     mesh.name = definition.name
