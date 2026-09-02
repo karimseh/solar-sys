@@ -80,7 +80,7 @@ export class SolarSystemEngine {
     this.starField = createStarField()
     this.scene.add(this.starField)
 
-    this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1000)
+    this.camera = new THREE.PerspectiveCamera(60, 1, 0.1, 2_000)
     this.camera.position.copy(this.overviewCameraPosition)
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -103,6 +103,9 @@ export class SolarSystemEngine {
     this.controls.enableDamping = true
     this.controls.dampingFactor = 0.05
     this.controls.target.copy(this.overviewTarget)
+    this.controls.minDistance = 0.4
+    this.controls.maxDistance = 350
+    this.controls.zoomSpeed = 0.75
     const loadingManager = new THREE.LoadingManager()
 
     loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
@@ -284,6 +287,7 @@ export class SolarSystemEngine {
       : null
 
     let material: THREE.Material
+
     if (definition.kind === "star" && colorMap) {
       const sunMaterial = createSunMaterial(colorMap)
 
@@ -295,9 +299,14 @@ export class SolarSystemEngine {
       material = new THREE.MeshBasicMaterial({
         color: definition.visual.color,
       })
+    } else if (!colorMap) {
+      // Temporary diagnostic material for planets without textures.
+      material = new THREE.MeshBasicMaterial({
+        color: definition.visual.color,
+      })
     } else {
       material = new THREE.MeshStandardMaterial({
-        color: colorMap ? 0xffffff : definition.visual.color,
+        color: 0xffffff,
         map: colorMap,
         roughness: 0.8,
         metalness: 0,
@@ -430,6 +439,7 @@ export class SolarSystemEngine {
     this.updateCamera(deltaTime)
 
     this.controls.update()
+    this.starField.position.copy(this.camera.position)
     this.renderer.render(this.scene, this.camera)
   }
 

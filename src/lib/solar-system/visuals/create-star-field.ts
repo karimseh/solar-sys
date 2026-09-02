@@ -13,7 +13,7 @@ export function createStarField(
     const theta = Math.random() * Math.PI * 2
     const yDirection = THREE.MathUtils.randFloatSpread(2)
     const horizontalDirection = Math.sqrt(1 - yDirection * yDirection)
-    const radius = THREE.MathUtils.randFloat(80, 180)
+    const radius = THREE.MathUtils.randFloat(600, 900)
     const isBrightStar = Math.random() < 0.06
 
     sizes[index] = isBrightStar
