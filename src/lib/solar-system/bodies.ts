@@ -16,7 +16,6 @@ export const CELESTIAL_BODIES = [
     description:
       "The Sun is the star at the center of our solar system. It is a nearly perfect sphere of hot plasma, heated to incandescence by nuclear fusion reactions in its core.",
     visual: {
-      radius: 1,
       color: "#ffb300",
       spinSpeed: 0.12,
       texturePath: null,
@@ -39,8 +38,6 @@ export const CELESTIAL_BODIES = [
       "Earth is the third planet from the Sun and the only known world with life.",
 
     visual: {
-      radius: 0.28,
-
       color: "#2878ff",
       spinSpeed: 0.8,
 

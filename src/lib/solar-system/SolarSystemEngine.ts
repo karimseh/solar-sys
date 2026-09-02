@@ -7,7 +7,11 @@ import { sampleEclipticOrbit } from "../astronomy/orbit-path"
 import { resolveOrbitalElementsAtDate } from "../astronomy/orbital-elements"
 import { dateToJulianDateUtc } from "../astronomy/time"
 import type { OrbitalElementsAtDate } from "../astronomy/types"
-import { setScenePositionFromEcliptic } from "./scene-scale"
+import {
+  bodyRadiusToSceneUnits,
+  setScenePositionFromEcliptic,
+  type ScaleMode,
+} from "@/lib/solar-system/scene-scale"
 
 export type SolarSystemEngineOptions = {
   onProgress?: (progress: number, url: string) => void
@@ -20,11 +24,14 @@ type BodyRuntime = {
   definition: CelestialBodyDefinition
   mesh: THREE.Mesh
   positionGroup: THREE.Object3D
+  selectionGroup: THREE.Object3D
   orbitPath: THREE.LineLoop | null
+  displayRadius: number
 }
 export class SolarSystemEngine {
   private readonly container: HTMLElement
   private simulationJulianDate = dateToJulianDateUtc(new Date())
+  private scaleMode: ScaleMode = "exploration"
   private readonly scene: THREE.Scene
   private readonly camera: THREE.PerspectiveCamera
   private readonly renderer: THREE.WebGLRenderer
@@ -111,6 +118,24 @@ export class SolarSystemEngine {
 
     this.renderer.setAnimationLoop(this.animate)
   }
+  public setScaleMode(mode: ScaleMode): void {
+    if (this.scaleMode === mode) {
+      return
+    }
+
+    this.scaleMode = mode
+
+    for (const body of this.bodies) {
+      const displayRadius = bodyRadiusToSceneUnits(
+        body.definition.radiusKm,
+        body.definition.kind,
+        mode,
+      )
+
+      body.displayRadius = displayRadius
+      body.mesh.scale.setScalar(displayRadius)
+    }
+  }
 
   public setPaused(paused: boolean): void {
     this.isPaused = paused
@@ -161,7 +186,7 @@ export class SolarSystemEngine {
     }
 
     const selectedMesh = intersections[0].object
-    const body = this.bodies.find((body) => body.mesh === selectedMesh) || null
+    const body = this.bodies.find((body) => body.mesh === selectedMesh) ?? null
     this.setSelectedBody(body)
   }
 
@@ -169,13 +194,13 @@ export class SolarSystemEngine {
     if (this.selectedBody === body) return
 
     if (this.selectedBody) {
-      this.selectedBody.mesh.scale.setScalar(1)
+      this.selectedBody.selectionGroup.scale.setScalar(1)
     }
 
     this.selectedBody = body
 
     if (body) {
-      body.mesh.scale.setScalar(1.15)
+      body.selectionGroup.scale.setScalar(1.15)
 
       body.mesh.getWorldPosition(this.focusedWorldPosition)
 
@@ -187,7 +212,7 @@ export class SolarSystemEngine {
         this.cameraOffset.set(0, 1, 1)
       }
 
-      const focusDistance = Math.max(body.definition.visual.radius * 3.5, 0.6)
+      const focusDistance = Math.max(body.displayRadius * 3.5, 0.6)
 
       this.cameraOffset.normalize().multiplyScalar(focusDistance)
 
@@ -197,7 +222,7 @@ export class SolarSystemEngine {
       this.returningToOverview = true
       this.controls.enabled = false
     }
-    this.onSelect?.(body?.definition.id || null)
+    this.onSelect?.(body?.definition.id ?? null)
   }
   private updateCamera(deltaTime: number): void {
     if (deltaTime <= 0) {
@@ -258,7 +283,7 @@ export class SolarSystemEngine {
   }
 
   private createBody = (definition: CelestialBodyDefinition): void => {
-    const geometry = new THREE.SphereGeometry(definition.visual.radius, 48, 48)
+    const geometry = new THREE.SphereGeometry(1, 48, 48)
     const colorMap = definition.visual.texturePath
       ? this.loadColorTexture(definition.visual.texturePath)
       : null
@@ -278,10 +303,23 @@ export class SolarSystemEngine {
     const mesh = new THREE.Mesh(geometry, material)
     mesh.name = definition.name
     mesh.userData.bodyId = definition.id
+    const displayRadius = bodyRadiusToSceneUnits(
+      definition.radiusKm,
+      definition.kind,
+      this.scaleMode,
+    )
+
+    mesh.scale.setScalar(displayRadius)
+
+    const selectionGroup = new THREE.Object3D()
+    selectionGroup.add(mesh)
 
     const tiltGroup = new THREE.Object3D()
+
     tiltGroup.rotation.x = THREE.MathUtils.degToRad(definition.axialTiltDegrees)
-    tiltGroup.add(mesh)
+
+    tiltGroup.add(selectionGroup)
+
     const positionGroup = new THREE.Object3D()
     positionGroup.add(tiltGroup)
     this.scene.add(positionGroup)
@@ -314,7 +352,9 @@ export class SolarSystemEngine {
       definition,
       mesh,
       positionGroup,
+      selectionGroup,
       orbitPath,
+      displayRadius,
     })
   }
   private createOrbitPath = (

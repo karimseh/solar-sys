@@ -16,7 +16,6 @@ export interface CelestialBodyDefinition {
   readonly description: string
 
   readonly visual: {
-    readonly radius: number
     readonly color: string
     readonly spinSpeed: number
     readonly texturePath: string | null
