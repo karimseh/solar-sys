@@ -17,7 +17,6 @@ export const CELESTIAL_BODIES = [
       "The Sun is the star at the center of our solar system. It is a nearly perfect sphere of hot plasma, heated to incandescence by nuclear fusion reactions in its core.",
     visual: {
       color: "#ffb300",
-      spinSpeed: 0.12,
       texturePath: "/textures/sun-surface.jpg",
       nightTexturePath: null,
     },
@@ -40,8 +39,6 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#2878ff",
-      spinSpeed: 0.8,
-
       texturePath: "/textures/earth-day.jpg",
       nightTexturePath: "/textures/earth-night.png",
     },

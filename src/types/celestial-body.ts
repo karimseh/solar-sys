@@ -17,7 +17,6 @@ export interface CelestialBodyDefinition {
 
   readonly visual: {
     readonly color: string
-    readonly spinSpeed: number
     readonly texturePath: string | null
     readonly nightTexturePath: string | null
   }

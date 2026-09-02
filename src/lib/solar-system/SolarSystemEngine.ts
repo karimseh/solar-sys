@@ -14,6 +14,7 @@ import {
   setScenePositionFromEcliptic,
 } from "@/lib/solar-system/scene-scale"
 import { createStarField } from "./visuals/create-star-field"
+import { calculateAxialRotationRadians } from "../astronomy/rotation"
 
 export type SolarSystemEngineOptions = {
   onProgress?: (progress: number, url: string) => void
@@ -411,8 +412,10 @@ export class SolarSystemEngine {
     }
 
     for (const body of this.bodies) {
-      body.mesh.rotation.y =
-        this.simulationTime * body.definition.visual.spinSpeed
+      body.mesh.rotation.y = calculateAxialRotationRadians(
+        this.simulationTime,
+        body.definition.rotationPeriodHours,
+      )
       const orbitalElements = body.definition.orbitalElements
 
       if (orbitalElements) {
