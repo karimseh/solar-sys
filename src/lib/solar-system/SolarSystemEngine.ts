@@ -17,7 +17,10 @@ import {
   setScenePositionFromEcliptic,
 } from "@/lib/solar-system/scene-scale"
 import { createStarField } from "./visuals/create-star-field"
-import { calculateAxialRotationRadians } from "../astronomy/rotation"
+import {
+  calculateAxialRotationRadians,
+  calculateEarthRotationAngleRadians,
+} from "../astronomy/rotation"
 
 const ORBIT_DEFAULT_COLOR = 0x888888
 const ORBIT_HOVER_COLOR = 0xffffff
@@ -596,10 +599,13 @@ export class SolarSystemEngine {
     }
 
     for (const body of this.bodies) {
-      body.mesh.rotation.y = calculateAxialRotationRadians(
-        this.simulationTime,
-        body.definition.rotationPeriodHours,
-      )
+      body.mesh.rotation.y =
+        body.definition.id === "earth"
+          ? calculateEarthRotationAngleRadians(this.simulationJulianDate)
+          : calculateAxialRotationRadians(
+              this.simulationTime,
+              body.definition.rotationPeriodHours,
+            )
       const orbitalElements = body.definition.orbitalElements
 
       if (orbitalElements) {
