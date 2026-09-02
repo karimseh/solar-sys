@@ -90,7 +90,7 @@ export function SimulationControls({
     "hover:bg-white/20 hover:text-white"
 
   return (
-    <div className="absolute left-5 top-5 z-20 flex items-center gap-2 rounded-xl border border-white/15 bg-black/35 p-2 backdrop-blur-md">
+    <div className="absolute top-5 left-5 z-20 flex items-center gap-2 rounded-xl border border-white/15 bg-black/35 p-2 backdrop-blur-md">
       <button
         type="button"
         className={buttonClass}
