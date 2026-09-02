@@ -77,6 +77,11 @@ export class SolarSystemEngine {
     this.onSelect = options.onSelect
     this.scene = new THREE.Scene()
     this.scene.background = new THREE.Color(0x02030a)
+    const explorationFillLight = new THREE.AmbientLight(0x334466, 1)
+
+    explorationFillLight.name = "Exploration fill light"
+
+    this.scene.add(explorationFillLight)
     this.starField = createStarField()
     this.scene.add(this.starField)
 

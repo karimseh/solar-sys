@@ -39,7 +39,7 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#9c8f7d",
-      texturePath: null,
+      texturePath: "/textures/mercury.jpg",
       nightTexturePath: null,
     },
   },
@@ -61,7 +61,7 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#d8b56a",
-      texturePath: null,
+      texturePath: "/textures/venus.jpg",
       nightTexturePath: null,
     },
   },
@@ -105,7 +105,7 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#b65332",
-      texturePath: null,
+      texturePath: "/textures/mars.jpg",
       nightTexturePath: null,
     },
   },
@@ -127,7 +127,7 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#c9a27c",
-      texturePath: null,
+      texturePath: "/textures/jupiter.jpg",
       nightTexturePath: null,
     },
   },
@@ -149,7 +149,7 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#d8c28f",
-      texturePath: null,
+      texturePath: "/textures/saturn.jpg",
       nightTexturePath: null,
     },
   },
@@ -170,7 +170,7 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#86d5e8",
-      texturePath: null,
+      texturePath: "/textures/uranus.jpg",
       nightTexturePath: null,
     },
   },
@@ -192,7 +192,7 @@ export const CELESTIAL_BODIES = [
 
     visual: {
       color: "#4169c1",
-      texturePath: null,
+      texturePath: "/textures/neptune.jpg",
       nightTexturePath: null,
     },
   },
