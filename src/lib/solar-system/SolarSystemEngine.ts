@@ -402,10 +402,7 @@ export class SolarSystemEngine {
     const mesh = new THREE.Mesh(geometry, material)
     mesh.name = definition.name
     mesh.userData.bodyId = definition.id
-    const displayRadius = bodyRadiusToSceneUnits(
-      definition.radiusKm,
-      definition.kind,
-    )
+    const displayRadius = bodyRadiusToSceneUnits(definition.radiusKm)
 
     mesh.scale.setScalar(displayRadius)
 

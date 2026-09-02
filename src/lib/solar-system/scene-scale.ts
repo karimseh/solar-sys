@@ -1,15 +1,12 @@
 import * as THREE from "three"
 import type { EclipticPosition } from "@/lib/astronomy/ecliptic-coordinates"
-import type { CelestialBodyKind } from "@/types/celestial-body"
 
 export const KILOMETERS_PER_AU = 149_597_870.7
 export const SCENE_UNITS_PER_AU = 4
 
 const EARTH_MEAN_RADIUS_KM = 6_371
-const SUN_MEAN_RADIUS_KM = 695_700
-
-const EXPLORATION_EARTH_RADIUS = 0.12
-const EXPLORATION_SUN_RADIUS = 0.6
+const EXPLORATION_EARTH_RADIUS = 0.1
+const RADIUS_COMPRESSION_EXPONENT = 0.45
 
 export function kilometersToSceneUnits(kilometers: number): number {
   if (!Number.isFinite(kilometers) || kilometers < 0) {
@@ -19,19 +16,17 @@ export function kilometersToSceneUnits(kilometers: number): number {
   return (kilometers / KILOMETERS_PER_AU) * SCENE_UNITS_PER_AU
 }
 
-export function bodyRadiusToSceneUnits(
-  radiusKm: number,
-  kind: CelestialBodyKind,
-): number {
+export function bodyRadiusToSceneUnits(radiusKm: number): number {
   if (!Number.isFinite(radiusKm) || radiusKm <= 0) {
     throw new RangeError("Body radius must be finite and positive")
   }
 
-  if (kind === "star") {
-    return (radiusKm / SUN_MEAN_RADIUS_KM) * EXPLORATION_SUN_RADIUS
-  }
+  const radiusRelativeToEarth = radiusKm / EARTH_MEAN_RADIUS_KM
 
-  return (radiusKm / EARTH_MEAN_RADIUS_KM) * EXPLORATION_EARTH_RADIUS
+  return (
+    EXPLORATION_EARTH_RADIUS *
+    Math.pow(radiusRelativeToEarth, RADIUS_COMPRESSION_EXPONENT)
+  )
 }
 
 export function setScenePositionFromEcliptic(
