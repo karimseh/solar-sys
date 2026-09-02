@@ -61,7 +61,7 @@ export default function BodyInfoPanel({ body, onClose }: BodyInfoPanelProps) {
         </div>
 
         <div className="col-span-2">
-          <dt className="text-white/50">Mean distance from parent</dt>
+          <dt className="text-white/50">Mean distance from sun</dt>
           <dd className="mt-1">
             {numberFormatter.format(body.meanDistanceFromParentKm)} km
           </dd>
