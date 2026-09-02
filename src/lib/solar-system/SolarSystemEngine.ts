@@ -175,18 +175,41 @@ export class SolarSystemEngine {
       -((event.clientY - rectangle.top) / rectangle.height) * 2 + 1
 
     this.raycaster.setFromCamera(this.pointer, this.camera)
-    const intersections = this.raycaster.intersectObjects(
+    this.updateOrbitPathPickThreshold(rectangle.height)
+
+    // Meshes take priority when a planet overlaps its orbit.
+    const meshIntersection = this.raycaster.intersectObjects(
       this.bodies.map((body) => body.mesh),
       false,
-    )
+    )[0]
 
-    if (intersections.length === 0) {
+    const orbitIntersection = meshIntersection
+      ? undefined
+      : this.raycaster.intersectObjects(
+          this.bodies.flatMap((body) =>
+            body.orbitPath?.visible ? [body.orbitPath] : [],
+          ),
+          false,
+        )[0]
+
+    const intersection = meshIntersection ?? orbitIntersection
+
+    if (!intersection) {
       this.setSelectedBody(null)
       return
     }
 
-    const selectedMesh = intersections[0].object
-    const body = this.bodies.find((body) => body.mesh === selectedMesh) ?? null
+    const bodyId = intersection.object.userData.bodyId
+
+    if (typeof bodyId !== "string") {
+      this.setSelectedBody(null)
+      return
+    }
+
+    const body =
+      this.bodies.find((candidate) => candidate.definition.id === bodyId) ??
+      null
+
     this.setSelectedBody(body)
   }
 
@@ -357,6 +380,7 @@ export class SolarSystemEngine {
       )
 
       orbitPath = this.createOrbitPath(elementsAtDate)
+      orbitPath.userData.bodyId = definition.id
       orbitPath.visible = this.orbitPathsVisible
       this.scene.add(orbitPath)
     }
@@ -374,6 +398,7 @@ export class SolarSystemEngine {
       displayRadius,
     })
   }
+
   private createOrbitPath = (
     elements: OrbitalElementsAtDate,
   ): THREE.LineLoop => {
@@ -394,6 +419,20 @@ export class SolarSystemEngine {
     })
 
     return new THREE.LineLoop(geometry, material)
+  }
+  private updateOrbitPathPickThreshold(viewportHeight: number): void {
+    const cameraDistance = this.camera.position.distanceTo(this.controls.target)
+
+    const verticalFovRadians = THREE.MathUtils.degToRad(this.camera.fov)
+
+    const visibleWorldHeight =
+      2 * cameraDistance * Math.tan(verticalFovRadians / 2)
+
+    const worldUnitsPerPixel = visibleWorldHeight / viewportHeight
+
+    const pickRadiusPixels = 8
+
+    this.raycaster.params.Line.threshold = worldUnitsPerPixel * pickRadiusPixels
   }
   private resize = (): void => {
     const width = this.container.clientWidth
