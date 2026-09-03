@@ -12,6 +12,7 @@ import { dateToJulianDateUtc, SECONDS_PER_DAY } from "../astronomy/time"
 import type { OrbitalElementsAtDate } from "../astronomy/types"
 import { createEarthMaterial } from "./visuals/create-earth-material"
 import { createSunMaterial } from "./visuals/create-sun-material"
+import { createRingMesh } from "./visuals/create-ring-mesh"
 import {
   bodyRadiusToSceneUnits,
   setScenePositionFromEcliptic,
@@ -35,11 +36,18 @@ export type SolarSystemEngineOptions = {
   onReady?: () => void
   onError?: (url: string) => void
   onSelect?: (bodyId: string | null) => void
+  onOrbitHover?: (details: OrbitHoverDetails | null) => void
+}
+export type OrbitHoverDetails = {
+  readonly bodyId: string
+  readonly clientX: number
+  readonly clientY: number
 }
 
 type BodyRuntime = {
   definition: CelestialBodyDefinition
   mesh: THREE.Mesh
+  ringMesh: THREE.Mesh | null
   positionGroup: THREE.Object3D
   selectionGroup: THREE.Object3D
   orbitPath: Line2 | null
@@ -75,6 +83,8 @@ export class SolarSystemEngine {
   private readonly cameraOffset = new THREE.Vector3()
   private isFocusingSelectedBody = false
   private readonly focusedBodyMovement = new THREE.Vector3()
+  private readonly onOrbitHover:
+    ((details: OrbitHoverDetails | null) => void) | undefined
 
   private simulationTime = 0
   private simulationSpeedMultiplier = 1
@@ -93,9 +103,10 @@ export class SolarSystemEngine {
   constructor(container: HTMLElement, options: SolarSystemEngineOptions) {
     this.container = container
     this.onSelect = options.onSelect
+    this.onOrbitHover = options.onOrbitHover
     this.scene = new THREE.Scene()
     this.scene.background = new THREE.Color(0x02030a)
-    const explorationFillLight = new THREE.AmbientLight(0xffffff, 0.35)
+    const explorationFillLight = new THREE.AmbientLight(0xffffff, 0.08)
 
     explorationFillLight.name = "Exploration fill light"
 
@@ -414,6 +425,14 @@ export class SolarSystemEngine {
 
     const selectionGroup = new THREE.Object3D()
     selectionGroup.add(mesh)
+    const ringMesh = definition.visual.rings
+      ? createRingMesh(definition.visual.rings, displayRadius)
+      : null
+
+    if (ringMesh) {
+      ringMesh.name = `${definition.name} rings`
+      selectionGroup.add(ringMesh)
+    }
 
     const tiltGroup = new THREE.Object3D()
     const axialTiltRadians = THREE.MathUtils.degToRad(
@@ -472,13 +491,14 @@ export class SolarSystemEngine {
       orbitalReference.add(orbitPath)
     }
     if (definition.kind === "star") {
-      const light = new THREE.PointLight(0xffffff, 12)
+      const light = new THREE.PointLight(0xffffff, 2.5, 0, 0)
       mesh.add(light)
     }
 
     this.bodies.push({
       definition,
       mesh,
+      ringMesh,
       positionGroup,
       selectionGroup,
       orbitPath,
@@ -562,9 +582,9 @@ export class SolarSystemEngine {
     }
   }
   private handlePointerMove = (event: PointerEvent): void => {
-    // Don’t highlight paths while dragging the camera.
     if (event.buttons !== 0) {
       this.setHoveredOrbitPath(null)
+      this.onOrbitHover?.(null)
       this.renderer.domElement.style.cursor = ""
       return
     }
@@ -585,6 +605,17 @@ export class SolarSystemEngine {
     const orbitPath = (orbitIntersection?.object as Line2 | undefined) ?? null
 
     this.setHoveredOrbitPath(orbitPath)
+    const bodyId = orbitPath?.userData.bodyId
+
+    this.onOrbitHover?.(
+      typeof bodyId === "string"
+        ? {
+            bodyId,
+            clientX: event.clientX,
+            clientY: event.clientY,
+          }
+        : null,
+    )
 
     this.renderer.domElement.style.cursor =
       meshIntersection || orbitPath ? "pointer" : ""
@@ -592,6 +623,7 @@ export class SolarSystemEngine {
 
   private handlePointerLeave = (): void => {
     this.setHoveredOrbitPath(null)
+    this.onOrbitHover?.(null)
     this.renderer.domElement.style.cursor = ""
   }
 
@@ -671,6 +703,17 @@ export class SolarSystemEngine {
         : [body.mesh.material]
       for (const material of materials) {
         material.dispose()
+      }
+      if (body.ringMesh) {
+        body.ringMesh.geometry.dispose()
+
+        const ringMaterials = Array.isArray(body.ringMesh.material)
+          ? body.ringMesh.material
+          : [body.ringMesh.material]
+
+        for (const material of ringMaterials) {
+          material.dispose()
+        }
       }
 
       if (body.orbitPath) {

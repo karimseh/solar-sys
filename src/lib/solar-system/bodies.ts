@@ -152,6 +152,12 @@ export const CELESTIAL_BODIES = [
       color: "#c9a27c",
       texturePath: "/textures/jupiter.jpg",
       nightTexturePath: null,
+      rings: {
+        innerRadiusRatio: 1.75,
+        outerRadiusRatio: 1.85,
+        color: "#9a8875",
+        opacity: 0.14,
+      },
     },
   },
   {
@@ -174,6 +180,12 @@ export const CELESTIAL_BODIES = [
       color: "#d8c28f",
       texturePath: "/textures/saturn.jpg",
       nightTexturePath: null,
+      rings: {
+        innerRadiusRatio: 1.28,
+        outerRadiusRatio: 2.35,
+        color: "#cbbd9a",
+        opacity: 0.72,
+      },
     },
   },
   {
@@ -195,6 +207,12 @@ export const CELESTIAL_BODIES = [
       color: "#86d5e8",
       texturePath: "/textures/uranus.jpg",
       nightTexturePath: null,
+      rings: {
+        innerRadiusRatio: 1.46,
+        outerRadiusRatio: 2.02,
+        color: "#667077",
+        opacity: 0.2,
+      },
     },
   },
   {
@@ -217,6 +235,12 @@ export const CELESTIAL_BODIES = [
       color: "#4169c1",
       texturePath: "/textures/neptune.jpg",
       nightTexturePath: null,
+      rings: {
+        innerRadiusRatio: 1.7,
+        outerRadiusRatio: 2.56,
+        color: "#596271",
+        opacity: 0.1,
+      },
     },
   },
 ] as const satisfies readonly CelestialBodyDefinition[]

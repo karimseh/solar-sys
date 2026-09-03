@@ -1,7 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { SolarSystemEngine } from "@/lib/solar-system/SolarSystemEngine"
+import {
+  SolarSystemEngine,
+  type OrbitHoverDetails,
+} from "@/lib/solar-system/SolarSystemEngine"
 import BodyInfoPanel from "@/components/solar-system/BodyInfoPanel"
 import { CELESTIAL_BODIES } from "@/lib/solar-system/bodies"
 import { SimulationControls } from "./SimulationControls"
@@ -17,6 +20,9 @@ export default function SolarSystemCanvas() {
   const [isPaused, setIsPaused] = useState(false)
   const [simulationSpeed, setSimulationSpeed] = useState(1)
   const [showOrbits, setShowOrbits] = useState(true)
+  const [orbitTooltip, setOrbitTooltip] = useState<OrbitHoverDetails | null>(
+    null,
+  )
 
   function handleClosePanel(): void {
     setSelectedBodyId(null)
@@ -38,6 +44,7 @@ export default function SolarSystemCanvas() {
     const nextVisible = !showOrbits
 
     setShowOrbits(nextVisible)
+    setOrbitTooltip(null)
     engineRef.current?.setOrbitPathsVisible(nextVisible)
   }
 
@@ -68,6 +75,11 @@ export default function SolarSystemCanvas() {
           setSelectedBodyId(bodyId)
         }
       },
+      onOrbitHover: (details) => {
+        if (active) {
+          setOrbitTooltip(details)
+        }
+      },
     })
 
     engineRef.current = engine
@@ -83,6 +95,9 @@ export default function SolarSystemCanvas() {
   }, [])
   const selectedBody =
     CELESTIAL_BODIES.find((body) => body.id === selectedBodyId) ?? null
+  const orbitTooltipBody = orbitTooltip
+    ? CELESTIAL_BODIES.find((body) => body.id === orbitTooltip.bodyId)
+    : null
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -123,6 +138,18 @@ export default function SolarSystemCanvas() {
               </div>
             </div>
           )}
+        </div>
+      )}
+      {orbitTooltip && orbitTooltipBody && (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-30 rounded-md border border-white/15 bg-black/75 px-2.5 py-1.5 text-sm font-medium text-white shadow-lg backdrop-blur-sm"
+          style={{
+            left: orbitTooltip.clientX + 12,
+            top: orbitTooltip.clientY + 12,
+          }}
+        >
+          {orbitTooltipBody.name}
         </div>
       )}
       <BodyInfoPanel body={selectedBody} onClose={handleClosePanel} />

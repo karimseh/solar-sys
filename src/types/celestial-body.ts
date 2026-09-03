@@ -19,5 +19,13 @@ export interface CelestialBodyDefinition {
     readonly color: string
     readonly texturePath: string | null
     readonly nightTexturePath: string | null
+    readonly rings?: RingVisualDefinition
   }
+}
+
+export interface RingVisualDefinition {
+  readonly innerRadiusRatio: number
+  readonly outerRadiusRatio: number
+  readonly color: string
+  readonly opacity: number
 }
