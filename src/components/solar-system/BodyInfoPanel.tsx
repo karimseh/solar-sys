@@ -17,7 +17,7 @@ export default function BodyInfoPanel({ body, onClose }: BodyInfoPanelProps) {
         null)
 
   return (
-    <aside className="absolute top-4 right-4 z-20 w-[min(22rem,calc(100%-2rem))] rounded-2xl border border-white/15 bg-black/75 p-5 text-white shadow-2xl backdrop-blur-xl">
+    <aside className="absolute top-3 right-3 left-3 z-20 max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border border-white/15 bg-black/75 p-5 text-white shadow-2xl backdrop-blur-xl sm:top-4 sm:right-4 sm:left-auto sm:w-[22rem]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs tracking-[0.2em] text-amber-300 uppercase">

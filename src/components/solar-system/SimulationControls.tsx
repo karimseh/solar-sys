@@ -129,9 +129,8 @@ export function SimulationControls({
   onToggleOrbits,
 }: SimulationControlsProps) {
   const buttonClass =
-    "grid size-10 place-items-center rounded-lg border border-white/15 " +
-    "bg-white/10 text-white/75 transition " +
-    "hover:bg-white/20 hover:text-white"
+    "grid size-11 place-items-center rounded-lg border border-white/15 " +
+    "bg-white/10 text-white/75 transition hover:bg-white/20 hover:text-white"
   const selectedSpeedPreset =
     SPEED_PRESETS.find((preset) => preset.multiplier === speed) ??
     SPEED_PRESETS[0]
@@ -139,7 +138,7 @@ export function SimulationControls({
   const selectedSpeedIndex = SPEED_PRESETS.indexOf(selectedSpeedPreset)
 
   return (
-    <div className="absolute top-5 left-5 z-20 flex items-center gap-2 rounded-xl border border-white/15 bg-black/35 p-2 backdrop-blur-md">
+    <div className="absolute top-3 right-3 left-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-white/15 bg-black/35 p-2 backdrop-blur-md sm:top-5 sm:right-auto sm:left-5">
       <button
         type="button"
         className={buttonClass}
