@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
+import { SITE_CONFIG } from "@/config/site"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,8 +14,15 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "Solar System Explorer",
-  description: "An interactive 3D exploration of our solar system.",
+  title: SITE_CONFIG.title,
+  description: SITE_CONFIG.description,
+  authors: [
+    {
+      name: SITE_CONFIG.authorName,
+      url: SITE_CONFIG.authorUrl,
+    },
+  ],
+  creator: SITE_CONFIG.authorName,
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
