@@ -4,7 +4,6 @@ export function createSunMaterial(
   surfaceTexture: THREE.Texture,
 ): THREE.ShaderMaterial {
   surfaceTexture.wrapS = THREE.RepeatWrapping
-  surfaceTexture.needsUpdate = true
 
   return new THREE.ShaderMaterial({
     uniforms: {

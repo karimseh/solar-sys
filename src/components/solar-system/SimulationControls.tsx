@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+
 const SPEED_PRESETS = [
   { multiplier: 1, label: "Real time" },
   { multiplier: 3_600, label: "1 hour per second" },
@@ -19,6 +23,25 @@ type SimulationControlsProps = {
 
 type IconProps = {
   className?: string
+}
+function ControlsToggleIcon({
+  className,
+  collapsed,
+}: IconProps & { collapsed: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d={collapsed ? "m9 18 6-6-6-6" : "m15 18-6-6 6-6"} />
+    </svg>
+  )
 }
 
 function PlayIcon({ className }: IconProps) {
@@ -128,6 +151,8 @@ export function SimulationControls({
   onSpeedChange,
   onToggleOrbits,
 }: SimulationControlsProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
   const buttonClass =
     "grid size-11 place-items-center rounded-lg border border-white/15 " +
     "bg-white/10 text-white/75 transition hover:bg-white/20 hover:text-white"
@@ -138,81 +163,101 @@ export function SimulationControls({
   const selectedSpeedIndex = SPEED_PRESETS.indexOf(selectedSpeedPreset)
 
   return (
-    <div className="absolute top-3 right-3 left-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border border-white/15 bg-black/35 p-2 backdrop-blur-md sm:top-5 sm:right-auto sm:left-5">
+    <div
+      className={`absolute top-3 left-3 z-20 flex items-center gap-2 rounded-xl border border-white/15 bg-black/35 p-2 backdrop-blur-md sm:top-5 sm:left-5 ${
+        isCollapsed ? "" : "right-3 flex-wrap sm:right-auto"
+      }`}
+    >
       <button
         type="button"
         className={buttonClass}
-        onClick={onTogglePaused}
-        aria-label={isPaused ? "Resume simulation" : "Pause simulation"}
-        title={isPaused ? "Resume" : "Pause"}
+        onClick={() => setIsCollapsed((current) => !current)}
+        aria-expanded={!isCollapsed}
+        aria-label={
+          isCollapsed ? "Show simulation controls" : "Hide simulation controls"
+        }
+        title={isCollapsed ? "Show controls" : "Hide controls"}
       >
-        {isPaused ? (
-          <PlayIcon className="size-5" />
-        ) : (
-          <PauseIcon className="size-5" />
-        )}
+        <ControlsToggleIcon className="size-5" collapsed={isCollapsed} />
       </button>
+      {!isCollapsed && (
+        <>
+          <button
+            type="button"
+            className={buttonClass}
+            onClick={onTogglePaused}
+            aria-label={isPaused ? "Resume simulation" : "Pause simulation"}
+            title={isPaused ? "Resume" : "Pause"}
+          >
+            {isPaused ? (
+              <PlayIcon className="size-5" />
+            ) : (
+              <PauseIcon className="size-5" />
+            )}
+          </button>
 
-      <button
-        type="button"
-        className={buttonClass}
-        onClick={onToggleOrbits}
-        aria-label={showOrbits ? "Hide orbit paths" : "Show orbit paths"}
-        title={showOrbits ? "Hide orbits" : "Show orbits"}
-      >
-        <OrbitIcon className="size-6" disabled={!showOrbits} />
-      </button>
+          <button
+            type="button"
+            className={buttonClass}
+            onClick={onToggleOrbits}
+            aria-label={showOrbits ? "Hide orbit paths" : "Show orbit paths"}
+            title={showOrbits ? "Hide orbits" : "Show orbits"}
+          >
+            <OrbitIcon className="size-6" disabled={!showOrbits} />
+          </button>
 
-      <div
-        className="flex h-10 items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 text-white/75"
-        title={`Simulation speed: ${selectedSpeedPreset.label}`}
-      >
-        <SpeedIcon className="size-5 shrink-0" />
+          <div
+            className="flex h-10 items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 text-white/75"
+            title={`Simulation speed: ${selectedSpeedPreset.label}`}
+          >
+            <SpeedIcon className="size-5 shrink-0" />
 
-        <input
-          type="range"
-          min={0}
-          max={SPEED_PRESETS.length - 1}
-          step={1}
-          value={selectedSpeedIndex}
-          aria-label="Simulation speed"
-          aria-valuetext={selectedSpeedPreset.label}
-          onChange={(event) => {
-            const preset = SPEED_PRESETS[Number(event.currentTarget.value)]
+            <input
+              type="range"
+              min={0}
+              max={SPEED_PRESETS.length - 1}
+              step={1}
+              value={selectedSpeedIndex}
+              aria-label="Simulation speed"
+              aria-valuetext={selectedSpeedPreset.label}
+              onChange={(event) => {
+                const preset = SPEED_PRESETS[Number(event.currentTarget.value)]
 
-            if (preset) {
-              onSpeedChange(preset.multiplier)
-            }
-          }}
-          className="w-24 accent-white opacity-75"
-        />
-      </div>
-      <button
-        type="button"
-        className={buttonClass}
-        onClick={onResetToNow}
-        aria-label="Return to the current date and time"
-        title="Now"
-      >
-        <NowIcon className="size-5" />
-      </button>
-      {simulationDate ? (
-        <time
-          dateTime={simulationDate.toISOString()}
-          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-xs leading-10 text-white/75 tabular-nums"
-          title="Simulation date and time in UTC"
-        >
-          {UTC_DATE_FORMATTER.format(simulationDate)}
-          {" · "}
-          {UTC_TIME_FORMATTER.format(simulationDate)} UTC
-        </time>
-      ) : (
-        <div
-          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-xs leading-10 text-white/40 tabular-nums"
-          aria-hidden="true"
-        >
-          -- --- ---- · --:--:-- UTC
-        </div>
+                if (preset) {
+                  onSpeedChange(preset.multiplier)
+                }
+              }}
+              className="w-24 accent-white opacity-75"
+            />
+          </div>
+          <button
+            type="button"
+            className={buttonClass}
+            onClick={onResetToNow}
+            aria-label="Return to the current date and time"
+            title="Now"
+          >
+            <NowIcon className="size-5" />
+          </button>
+          {simulationDate ? (
+            <time
+              dateTime={simulationDate.toISOString()}
+              className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-xs leading-10 text-white/75 tabular-nums"
+              title="Simulation date and time in UTC"
+            >
+              {UTC_DATE_FORMATTER.format(simulationDate)}
+              {" · "}
+              {UTC_TIME_FORMATTER.format(simulationDate)} UTC
+            </time>
+          ) : (
+            <div
+              className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-xs leading-10 text-white/40 tabular-nums"
+              aria-hidden="true"
+            >
+              -- --- ---- · --:--:-- UTC
+            </div>
+          )}
+        </>
       )}
     </div>
   )
