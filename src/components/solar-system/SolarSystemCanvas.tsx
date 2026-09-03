@@ -16,6 +16,7 @@ export default function SolarSystemCanvas() {
   const [progress, setProgress] = useState(0)
   const [isReady, setIsReady] = useState(false)
   const [errorUrl, setErrorUrl] = useState<string | null>(null)
+  const [simulationDate, setSimulationDate] = useState<Date | null>(null)
   const [selectedBodyId, setSelectedBodyId] = useState<string | null>(null)
   const [isPaused, setIsPaused] = useState(false)
   const [simulationSpeed, setSimulationSpeed] = useState(1)
@@ -80,6 +81,11 @@ export default function SolarSystemCanvas() {
           setOrbitTooltip(details)
         }
       },
+      onSimulationDateChange: (date) => {
+        if (active) {
+          setSimulationDate(date)
+        }
+      },
     })
 
     engineRef.current = engine
@@ -102,6 +108,7 @@ export default function SolarSystemCanvas() {
   return (
     <div className="relative h-full w-full overflow-hidden">
       <SimulationControls
+        simulationDate={simulationDate}
         isPaused={isPaused}
         speed={simulationSpeed}
         showOrbits={showOrbits}

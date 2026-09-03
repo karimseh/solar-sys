@@ -7,6 +7,7 @@ const SPEED_PRESETS = [
 ] as const
 
 type SimulationControlsProps = {
+  simulationDate: Date | null
   isPaused: boolean
   speed: number
   showOrbits: boolean
@@ -83,8 +84,23 @@ function SpeedIcon({ className }: IconProps) {
     </svg>
   )
 }
+const UTC_DATE_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+})
+
+const UTC_TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hourCycle: "h23",
+  timeZone: "UTC",
+})
 
 export function SimulationControls({
+  simulationDate,
   isPaused,
   speed,
   showOrbits,
@@ -152,6 +168,24 @@ export function SimulationControls({
           className="w-24 accent-white opacity-75"
         />
       </div>
+      {simulationDate ? (
+        <time
+          dateTime={simulationDate.toISOString()}
+          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-xs leading-10 text-white/75 tabular-nums"
+          title="Simulation date and time in UTC"
+        >
+          {UTC_DATE_FORMATTER.format(simulationDate)}
+          {" · "}
+          {UTC_TIME_FORMATTER.format(simulationDate)} UTC
+        </time>
+      ) : (
+        <div
+          className="h-10 rounded-lg border border-white/15 bg-white/10 px-3 text-xs leading-10 text-white/40 tabular-nums"
+          aria-hidden="true"
+        >
+          -- --- ---- · --:--:-- UTC
+        </div>
+      )}
     </div>
   )
 }

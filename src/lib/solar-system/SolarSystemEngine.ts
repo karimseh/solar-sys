@@ -8,7 +8,11 @@ import type { CelestialBodyDefinition } from "@/types/celestial-body"
 import { calculateHeliocentricEclipticPosition } from "../astronomy/ecliptic-coordinates"
 import { sampleEclipticOrbit } from "../astronomy/orbit-path"
 import { resolveOrbitalElementsAtDate } from "../astronomy/orbital-elements"
-import { dateToJulianDateUtc, SECONDS_PER_DAY } from "../astronomy/time"
+import {
+  dateToJulianDateUtc,
+  SECONDS_PER_DAY,
+  julianDateToDateUtc,
+} from "../astronomy/time"
 import type { OrbitalElementsAtDate } from "../astronomy/types"
 import { createEarthMaterial } from "./visuals/create-earth-material"
 import { createSunMaterial } from "./visuals/create-sun-material"
@@ -30,6 +34,7 @@ const ORBIT_HOVER_COLOR = 0xffffff
 const ORBIT_DEFAULT_WIDTH = 0.8
 const ORBIT_HOVER_WIDTH = 2.5
 const MAX_SIMULATION_SPEED = 2_592_000
+const DATE_UPDATE_INTERVAL_MS = 100
 
 export type SolarSystemEngineOptions = {
   onProgress?: (progress: number, url: string) => void
@@ -37,6 +42,7 @@ export type SolarSystemEngineOptions = {
   onError?: (url: string) => void
   onSelect?: (bodyId: string | null) => void
   onOrbitHover?: (details: OrbitHoverDetails | null) => void
+  onSimulationDateChange?: (date: Date) => void
 }
 export type OrbitHoverDetails = {
   readonly bodyId: string
@@ -63,6 +69,10 @@ export class SolarSystemEngine {
   >
   private sunMaterial: THREE.ShaderMaterial | null = null
   private visualTime = 0
+  private readonly onSimulationDateChange: ((date: Date) => void) | undefined
+
+  private lastDateUpdateTime = Number.NEGATIVE_INFINITY
+  private lastReportedSimulationSecond: number | null = null
   private hoveredOrbitPath: Line2 | null = null
   private readonly scene: THREE.Scene
   private readonly camera: THREE.PerspectiveCamera
@@ -104,6 +114,7 @@ export class SolarSystemEngine {
     this.container = container
     this.onSelect = options.onSelect
     this.onOrbitHover = options.onOrbitHover
+    this.onSimulationDateChange = options.onSimulationDateChange
     this.scene = new THREE.Scene()
     this.scene.background = new THREE.Color(0x02030a)
     const explorationFillLight = new THREE.AmbientLight(0xffffff, 0.08)
@@ -655,6 +666,17 @@ export class SolarSystemEngine {
         (deltaTime * this.simulationSpeedMultiplier) / SECONDS_PER_DAY
 
       this.simulationJulianDate += simulatedDays
+      if (time - this.lastDateUpdateTime >= DATE_UPDATE_INTERVAL_MS) {
+        const simulationDate = julianDateToDateUtc(this.simulationJulianDate)
+        const simulationSecond = Math.floor(simulationDate.getTime() / 1_000)
+
+        if (simulationSecond !== this.lastReportedSimulationSecond) {
+          this.lastReportedSimulationSecond = simulationSecond
+          this.onSimulationDateChange?.(simulationDate)
+        }
+
+        this.lastDateUpdateTime = time
+      }
       this.simulationTime += simulatedDays
     }
 

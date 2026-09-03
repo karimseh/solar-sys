@@ -19,3 +19,12 @@ export function julianCenturiesSinceJ2000(julianDate: number): number {
   }
   return (julianDate - J2000_JULIAN_DATE) / DAYS_PER_JULIAN_CENTURY
 }
+export function julianDateToDateUtc(julianDate: number): Date {
+  if (!Number.isFinite(julianDate)) {
+    throw new RangeError(`Invalid Julian date: ${julianDate}`)
+  }
+
+  return new Date(
+    (julianDate - JULIAN_DATE_AT_UNIX_EPOCH) * MILLISECONDS_PER_DAY,
+  )
+}
