@@ -17,7 +17,7 @@ export default function BodyInfoPanel({ body, onClose }: BodyInfoPanelProps) {
         null)
 
   return (
-    <aside className="absolute top-3 right-3 left-3 z-20 max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-2xl border border-white/15 bg-black/75 p-5 text-white shadow-2xl backdrop-blur-xl sm:top-4 sm:right-4 sm:left-auto sm:w-[22rem]">
+    <aside className="absolute right-3 bottom-3 left-3 z-20 max-h-[38dvh] overflow-y-auto overscroll-contain rounded-2xl border border-white/15 bg-black/75 p-4 text-white shadow-2xl backdrop-blur-xl sm:top-4 sm:right-4 sm:bottom-auto sm:left-auto sm:max-h-[calc(100dvh-2rem)] sm:w-[22rem] sm:p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs tracking-[0.2em] text-amber-300 uppercase">
@@ -30,7 +30,7 @@ export default function BodyInfoPanel({ body, onClose }: BodyInfoPanelProps) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full px-3 py-1 text-xl text-white/70 hover:bg-white/10 hover:text-white"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-xl text-white/70 hover:bg-white/10 hover:text-white"
           aria-label="Close information panel"
         >
           ×

@@ -125,7 +125,10 @@ export default function SolarSystemCanvas() {
         onSpeedChange={handleSpeedChange}
         onToggleOrbits={handleToggleOrbits}
       />
-      <div ref={containerRef} className="h-full w-full" />
+      <div
+        ref={containerRef}
+        className={selectedBody ? "h-[62%] w-full sm:h-full" : "h-full w-full"}
+      />
 
       {(!isReady || errorUrl) && (
         <div
