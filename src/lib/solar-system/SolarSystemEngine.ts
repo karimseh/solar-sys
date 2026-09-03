@@ -15,6 +15,7 @@ import { createSunMaterial } from "./visuals/create-sun-material"
 import {
   bodyRadiusToSceneUnits,
   setScenePositionFromEcliptic,
+  SATELLITE_ORBIT_DISTANCE_MULTIPLIER,
 } from "@/lib/solar-system/scene-scale"
 import { createStarField } from "./visuals/create-star-field"
 import {
@@ -43,6 +44,7 @@ type BodyRuntime = {
   selectionGroup: THREE.Object3D
   orbitPath: Line2 | null
   displayRadius: number
+  orbitDistanceMultiplier: number
 }
 export class SolarSystemEngine {
   private readonly container: HTMLElement
@@ -389,9 +391,10 @@ export class SolarSystemEngine {
         color: definition.visual.color,
       })
     } else if (!colorMap) {
-      // Temporary diagnostic material for planets without textures.
-      material = new THREE.MeshBasicMaterial({
+      material = new THREE.MeshStandardMaterial({
         color: definition.visual.color,
+        roughness: 1,
+        metalness: 0,
       })
     } else {
       material = new THREE.MeshStandardMaterial({
@@ -424,14 +427,36 @@ export class SolarSystemEngine {
 
     const positionGroup = new THREE.Object3D()
     positionGroup.add(tiltGroup)
-    this.scene.add(positionGroup)
+
+    const orbitDistanceMultiplier =
+      definition.kind === "moon" ? SATELLITE_ORBIT_DISTANCE_MULTIPLIER : 1
+
+    const parentBody =
+      definition.parentId === null
+        ? null
+        : (this.bodies.find(
+            (body) => body.definition.id === definition.parentId,
+          ) ?? null)
+
+    if (definition.parentId !== null && !parentBody) {
+      throw new Error(
+        `Parent body with ID "${definition.parentId}" not found for body "${definition.id}".`,
+      )
+    }
+    const orbitalReference = parentBody?.positionGroup ?? this.scene
+
+    orbitalReference.add(positionGroup)
     if (definition.orbitalElements) {
       const initialPosition = calculateHeliocentricEclipticPosition(
         definition.orbitalElements,
         this.simulationJulianDate,
       )
 
-      setScenePositionFromEcliptic(positionGroup.position, initialPosition)
+      setScenePositionFromEcliptic(
+        positionGroup.position,
+        initialPosition,
+        orbitDistanceMultiplier,
+      )
     }
 
     let orbitPath: Line2 | null = null
@@ -441,10 +466,10 @@ export class SolarSystemEngine {
         this.simulationJulianDate,
       )
 
-      orbitPath = this.createOrbitPath(elementsAtDate)
+      orbitPath = this.createOrbitPath(elementsAtDate, orbitDistanceMultiplier)
       orbitPath.userData.bodyId = definition.id
       orbitPath.visible = this.orbitPathsVisible
-      this.scene.add(orbitPath)
+      orbitalReference.add(orbitPath)
     }
     if (definition.kind === "star") {
       const light = new THREE.PointLight(0xffffff, 12)
@@ -458,19 +483,22 @@ export class SolarSystemEngine {
       selectionGroup,
       orbitPath,
       displayRadius,
+      orbitDistanceMultiplier,
     })
   }
 
-  private createOrbitPath = (elements: OrbitalElementsAtDate): Line2 => {
+  private createOrbitPath = (
+    elements: OrbitalElementsAtDate,
+    distanceMultiplier = 1,
+  ): Line2 => {
     const points = sampleEclipticOrbit(elements).map((position) => {
       const point = new THREE.Vector3()
 
-      setScenePositionFromEcliptic(point, position)
+      setScenePositionFromEcliptic(point, position, distanceMultiplier)
 
       return point
     })
 
-    // Line2 does not automatically close itself.
     if (points.length > 0) {
       points.push(points[0].clone())
     }
@@ -614,7 +642,11 @@ export class SolarSystemEngine {
           this.simulationJulianDate,
         )
 
-        setScenePositionFromEcliptic(body.positionGroup.position, position)
+        setScenePositionFromEcliptic(
+          body.positionGroup.position,
+          position,
+          body.orbitDistanceMultiplier,
+        )
       }
     }
     this.updateCamera(deltaTime)

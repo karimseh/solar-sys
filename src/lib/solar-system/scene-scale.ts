@@ -3,6 +3,7 @@ import type { EclipticPosition } from "@/lib/astronomy/ecliptic-coordinates"
 
 export const KILOMETERS_PER_AU = 149_597_870.7
 export const SCENE_UNITS_PER_AU = 4
+export const SATELLITE_ORBIT_DISTANCE_MULTIPLIER = 50
 
 const EARTH_MEAN_RADIUS_KM = 6_371
 const EXPLORATION_EARTH_RADIUS = 0.1
@@ -32,10 +33,17 @@ export function bodyRadiusToSceneUnits(radiusKm: number): number {
 export function setScenePositionFromEcliptic(
   target: THREE.Vector3,
   position: EclipticPosition,
+  distanceMultiplier = 1,
 ): THREE.Vector3 {
+  if (!Number.isFinite(distanceMultiplier) || distanceMultiplier <= 0) {
+    throw new RangeError("Distance multiplier must be finite and positive")
+  }
+
+  const scale = SCENE_UNITS_PER_AU * distanceMultiplier
+
   return target.set(
-    position.xAu * SCENE_UNITS_PER_AU,
-    position.zAu * SCENE_UNITS_PER_AU,
-    -position.yAu * SCENE_UNITS_PER_AU,
+    position.xAu * scale,
+    position.zAu * scale,
+    -position.yAu * scale,
   )
 }

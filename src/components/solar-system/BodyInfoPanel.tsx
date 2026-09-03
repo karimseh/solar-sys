@@ -1,4 +1,5 @@
 import type { CelestialBodyDefinition } from "@/types/celestial-body"
+import { CELESTIAL_BODIES } from "@/lib/solar-system/bodies"
 
 type BodyInfoPanelProps = {
   body: CelestialBodyDefinition | null
@@ -9,6 +10,11 @@ const numberFormatter = new Intl.NumberFormat("en-US")
 
 export default function BodyInfoPanel({ body, onClose }: BodyInfoPanelProps) {
   if (!body) return null
+  const parentBody =
+    body.parentId === null
+      ? null
+      : (CELESTIAL_BODIES.find((candidate) => candidate.id === body.parentId) ??
+        null)
 
   return (
     <aside className="absolute top-4 right-4 z-20 w-[min(22rem,calc(100%-2rem))] rounded-2xl border border-white/15 bg-black/75 p-5 text-white shadow-2xl backdrop-blur-xl">
@@ -60,12 +66,17 @@ export default function BodyInfoPanel({ body, onClose }: BodyInfoPanelProps) {
           </dd>
         </div>
 
-        <div className="col-span-2">
-          <dt className="text-white/50">Mean distance from sun</dt>
-          <dd className="mt-1">
-            {numberFormatter.format(body.meanDistanceFromParentKm)} km
-          </dd>
-        </div>
+        {parentBody && (
+          <div className="col-span-2">
+            <dt className="text-white/50">
+              Mean distance from {parentBody.name}
+            </dt>
+
+            <dd className="mt-1">
+              {numberFormatter.format(body.meanDistanceFromParentKm)} km
+            </dd>
+          </div>
+        )}
       </dl>
     </aside>
   )

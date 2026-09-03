@@ -1,5 +1,6 @@
 import type { CelestialBodyDefinition } from "@/types/celestial-body"
 import { JPL_PLANETARY_ELEMENTS } from "../astronomy/data/jpl-planetary-elements"
+import { MOON_ORBITAL_ELEMENTS } from "../astronomy/data/moon-orbital-elements"
 
 export const CELESTIAL_BODIES = [
   {
@@ -85,6 +86,28 @@ export const CELESTIAL_BODIES = [
       color: "#2878ff",
       texturePath: "/textures/earth-day.jpg",
       nightTexturePath: "/textures/earth-night.png",
+    },
+  },
+  {
+    id: "moon",
+    name: "Moon",
+    kind: "moon",
+    parentId: "earth",
+
+    radiusKm: 1_737.4,
+    orbitalElements: MOON_ORBITAL_ELEMENTS,
+    meanDistanceFromParentKm: 384_400,
+    orbitalPeriodDays: 27.321661,
+    rotationPeriodHours: 655.719864,
+    axialTiltDegrees: 6.68,
+
+    description:
+      "Earth’s only natural satellite. The Moon is synchronously rotating, so nearly the same hemisphere always faces Earth.",
+
+    visual: {
+      color: "#b8b8b8",
+      texturePath: "/textures/moon.jpg",
+      nightTexturePath: null,
     },
   },
   {
