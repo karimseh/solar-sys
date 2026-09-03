@@ -12,6 +12,7 @@ type SimulationControlsProps = {
   speed: number
   showOrbits: boolean
   onTogglePaused: () => void
+  onResetToNow: () => void
   onSpeedChange: (speed: number) => void
   onToggleOrbits: () => void
 }
@@ -42,6 +43,24 @@ function PauseIcon({ className }: IconProps) {
       aria-hidden="true"
     >
       <path d="M7 5h4v14H7zm6 0h4v14h-4z" />
+    </svg>
+  )
+}
+function NowIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+      <path d="M3 3v5h5" />
+      <path d="M12 7v5l3 2" />
     </svg>
   )
 }
@@ -105,6 +124,7 @@ export function SimulationControls({
   speed,
   showOrbits,
   onTogglePaused,
+  onResetToNow,
   onSpeedChange,
   onToggleOrbits,
 }: SimulationControlsProps) {
@@ -168,6 +188,15 @@ export function SimulationControls({
           className="w-24 accent-white opacity-75"
         />
       </div>
+      <button
+        type="button"
+        className={buttonClass}
+        onClick={onResetToNow}
+        aria-label="Return to the current date and time"
+        title="Now"
+      >
+        <NowIcon className="size-5" />
+      </button>
       {simulationDate ? (
         <time
           dateTime={simulationDate.toISOString()}

@@ -196,6 +196,17 @@ export class SolarSystemEngine {
   public setPaused(paused: boolean): void {
     this.isPaused = paused
   }
+  public setSimulationDate(date: Date): void {
+    this.simulationJulianDate = dateToJulianDateUtc(date)
+
+    // Generic planet rotations currently use elapsed simulation time.
+    this.simulationTime = 0
+
+    this.lastReportedSimulationSecond = Math.floor(date.getTime() / 1_000)
+    this.lastDateUpdateTime = Number.NEGATIVE_INFINITY
+
+    this.onSimulationDateChange?.(new Date(date.getTime()))
+  }
 
   public setSimulationSpeed(multiplier: number): void {
     this.simulationSpeedMultiplier = THREE.MathUtils.clamp(

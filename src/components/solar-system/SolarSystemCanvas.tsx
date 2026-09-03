@@ -35,6 +35,14 @@ export default function SolarSystemCanvas() {
     setIsPaused(nextPaused)
     engineRef.current?.setPaused(nextPaused)
   }
+  function handleResetToNow(): void {
+    const realTimeSpeed = 1
+    const engine = engineRef.current
+
+    setSimulationSpeed(realTimeSpeed)
+    engine?.setSimulationSpeed(realTimeSpeed)
+    engine?.setSimulationDate(new Date())
+  }
 
   function handleSpeedChange(speed: number) {
     setSimulationSpeed(speed)
@@ -113,6 +121,7 @@ export default function SolarSystemCanvas() {
         speed={simulationSpeed}
         showOrbits={showOrbits}
         onTogglePaused={handleTogglePaused}
+        onResetToNow={handleResetToNow}
         onSpeedChange={handleSpeedChange}
         onToggleOrbits={handleToggleOrbits}
       />
